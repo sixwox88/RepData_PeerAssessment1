@@ -1,4 +1,5 @@
 # Jooyoung Yu 
+
 ---
 title: "Reproducible Research: Peer Assessment 1"
 output: 
@@ -7,20 +8,94 @@ output:
 ---
 
 
-## Loading and preprocessing the data
+## 1. Reading Data set
+
+Read csv files.
+
+```{r, echo=TRUE}
+unzip(zipfile = "activity.zip", exdir = ".")
+
+dat<-read.csv("activity.csv")
+summary(dat)
+
+```
+
+## 2. Histogram of the total number of steps taken each day
+
+
+```{r, echo=TRUE}
+dat_perday <- aggregate(steps ~ date, data = dat, sum, na.rm = TRUE)
+hist(dat_perday$steps)
+
+dat_perday_mean <- round(mean(dat_perday$steps),2)
+dat_perday_median <- round(median(dat_perday$steps),2)
+
+```
+
+## 3. Mean and median number of stemps taken each day
+```{r, echo=TRUE}
+dat_perday_mean <- round(mean(dat_perday$steps),2)
+dat_perday_median <- round(median(dat_perday$steps),2)
+```
+* mean of daily steps : `r dat_perday_mean`
+* median of dail steps : `r dat_perday_median` 
+
+
+## 4. Time series plot of the average number of steps taken
+```{r, echo=TRUE}
+dat_perinterval <- aggregate(steps ~ interval, data = dat, mean, na.rm = TRUE) 
+plot(dat_perinterval$interval, dat_perinterval$steps, xlab="interval", ylab = "steps", main="Average daily activity pattern",type = "l")
+```
+
+
+## 5. The 5-minute interval that, on average, contains the maximum number of steps
+```{r, echo=TRUE}
+max_steps <- dat_perinterval[which.max(dat_perinterval$steps),1]
+print(max_steps)
+```
+
+## 6. Code to describe and show a strategy for imputing missing data
+To fill the missing data, mean of steps grouped by 5-minutes interval are set.
+```{r, echo=TRUE}
+library(dplyr)
+dat_filled <- dat %>% group_by(interval) %>% mutate(steps = ifelse(is.na(steps), mean(steps, na.rm=TRUE), steps))
+dat_filled <- as.data.frame.data.frame(dat_filled)
+
+```
+
+
+## 7. Histogram of the total number of steps taken each day after missing values are imputed
+```{r, echo=TRUE}
+dat_perday2 <- aggregate(steps ~ date, data = dat_filled, sum, na.rm = TRUE)
+hist(dat_perday2$steps, ylim=c(0,40))
+```
+
+
+```{r}
+dat_perday_mean2 <- mean(dat_perday2$steps)
+dat_perday_median2 <- median(dat_perday2$steps)
+```
+
+* mean of daily steps : `r dat_perday_mean2`
+* median of dail steps : `r dat_perday_median2`
+>>> After imputing missing data, mean there median value is little increased.
+
+## 8. Panel plot comparing the average number of steps taken per 5-minute interval across weekdays and weekends
+```{r}
+wday <- weekdays(as.Date(dat_filled$date))
+dat_filled <- cbind(dat_filled, wday)
+dat_filled <- dat_filled %>% mutate(isweeked = ifelse(wday == "토요일" | wday == "일요일", TRUE, FALSE))
+
+dat_weekday <- dat_filled[!dat_filled$isweeked,]
+dat_weekend <- dat_filled[dat_filled$isweeked,]
+
+par(mfrow=c(2,1))
+dat_weekday_perinterval <- aggregate(steps ~ interval, data = dat_weekday, mean, na.rm = TRUE) 
+plot(dat_weekday_perinterval$interval, dat_weekday_perinterval$steps, xlab="interval", ylab = "steps", main="weekday pattern",type = "l")
+
+dat_weekend_perinterval <- aggregate(steps ~ interval, data = dat_weekend, mean, na.rm = TRUE) 
+plot(dat_weekend_perinterval$interval, dat_weekend_perinterval$steps, xlab="interval", ylab = "steps", main="weekend pattern",type = "l")
+```
 
 
 
-## What is mean total number of steps taken per day?
-
-
-
-## What is the average daily activity pattern?
-
-
-
-## Imputing missing values
-
-
-
-## Are there differences in activity patterns between weekdays and weekends?
